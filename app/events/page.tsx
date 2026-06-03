@@ -2,7 +2,8 @@ import { HistoryEvents } from "@/components/HistoryEvents";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getEventResults } from "@/lib/queries/event";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const metadata = {
   title: "历史比赛 | ASD Dota2 社区档案馆",
 };

@@ -7,6 +7,8 @@ import { getActivityLeaderboard, getArchiveStats } from "@/lib/queries/players";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 import { HistoryEvents } from "@/components/HistoryEvents";
 import { getRecentEventResults } from "@/lib/queries/event";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export default async function HomePage() {
   const [stats, activePlayers, recentEvents] = await Promise.all([
     getArchiveStats(),
