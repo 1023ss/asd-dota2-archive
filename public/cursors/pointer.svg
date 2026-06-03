@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.2" flood-color="#ffffff" flood-opacity="1"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="2.4" flood-color="#ffffff" flood-opacity="0.75"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ffffff" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  <path
+    filter="url(#glow)"
+    fill="#ececee"
+    stroke="#ffffff"
+    stroke-width="1.25"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    d="M 16 4
+       L 19.5 13
+       L 29 13
+       L 21.5 18.5
+       L 24.5 28
+       L 16 22.5
+       L 7.5 28
+       L 10.5 18.5
+       L 3 13
+       L 12.5 13
+       Z"
+  />
+</svg>
