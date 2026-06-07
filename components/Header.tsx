@@ -8,6 +8,7 @@ const navItems = [
   { href: "/", label: "首页" },
   { href: "/leaderboard", label: "社区玩家" },
   { href: "/events", label: "历史比赛" },
+  { href: "/me", label: "个人中心" },
 ];
 
 export function Header() {

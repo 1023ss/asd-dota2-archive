@@ -10,6 +10,8 @@ export interface EventResult {
   event_name: string;
   event_date: string | null;
   poster_url: string | null;
+  event_type?: string | null;
+  status?: string | null;
   champions: EventMember[];
   sponsors: EventMember[];
 }
@@ -26,8 +28,11 @@ export interface TeamMember {
 export interface EventTeam {
   id: number;
   event_id: number;
+  team_no: number | null;
   team_name: string;
   total_power: number | null;
+  captain_uid: string | null;
+  can_edit: boolean | null;
   members: TeamMember[];
 }
 
@@ -61,7 +66,7 @@ export async function getEventById(eventId: number): Promise<EventResult | null>
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("event_results_v2")
-    .select("id,event_name,event_date,poster_url,champions,sponsors")
+    .select("id,event_name,event_date,poster_url,champions,sponsors,event_type,status")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -74,16 +79,18 @@ export async function getEventById(eventId: number): Promise<EventResult | null>
 }
 
 /** 获取赛事队伍和队员信息 */
-export async function getEventTeams(event_id: number): Promise<EventTeam[]> {
-  if (!isSupabaseConfigured()) return [];
+export async function getEventTeams(eventId: number): Promise<EventTeam[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
 
   const supabase = await createClient();
 
-  // 查询所有队伍
   const { data: teams, error: teamsError } = await supabase
     .from("event_teams")
-    .select("*")
-    .eq("event_id", event_id)
+    .select("id,event_id,team_no,team_name,total_power,captain_uid,can_edit")
+    .eq("event_id", eventId)
+    .order("team_no", { ascending: true})
     .order("id", { ascending: true });
 
   if (teamsError || !teams) {
@@ -91,39 +98,26 @@ export async function getEventTeams(event_id: number): Promise<EventTeam[]> {
     return [];
   }
 
-  // 查询每个队伍成员
-  const result: EventTeam[] = [];
-  for (const team of teams) {
-    const { data: members, error: membersError } = await supabase
-      .from("event_team_members")
-      .select("id,uid,nickname,power")
-      .eq("event_id", event_id)
-      .eq("team_id", team.id)
-      .order("id", { ascending: true });
+  const { data: members, error: membersError } = await supabase
+    .from("event_team_members")
+    .select("id,event_id,team_id,uid,nickname,power")
+    .eq("event_id", eventId)
+    .order("team_id", { ascending: true })
+    .order("id", { ascending: true });
 
-    if (membersError) {
-      console.error(membersError);
-      continue;
-    }
+  if (membersError || !members) {
+    console.error(membersError);
 
-    result.push({
-      id: Number(team.id),
-      event_id: Number(team.event_id ?? event_id),
-      team_name: String(team.team_name ?? ""),
-      total_power:
-        team.total_power != null ? Number(team.total_power) : null,
-      members: (members ?? []).map((row, index) => ({
-        id: Number(row.id ?? index),
-        event_id,
-        team_id: Number(team.id),
-        uid: row.uid ? String(row.uid) : null,
-        nickname: String(row.nickname ?? ""),
-        power: row.power != null ? Number(row.power) : null,
-      })),
-    });
+    return teams.map((team) => ({
+      ...team,
+      members: [],
+    })) as EventTeam[];
   }
 
-  return result;
+  return teams.map((team) => ({
+    ...team,
+    members: members.filter((member) => member.team_id === team.id),
+  })) as EventTeam[];
 }
 
 /** 首页显示最近 N 场赛事 */
