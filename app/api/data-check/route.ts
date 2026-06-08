@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -9,34 +8,73 @@ const tables = [
   "event_results_v2",
   "event_teams",
   "event_team_members",
-] as const;
+];
+
+function errorToRaw(error: unknown) {
+  return error ? JSON.stringify(error) : null;
+}
 
 export async function GET() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
   const supabase = await createClient();
 
   if (!supabase) {
-    return NextResponse.json({
+    const error = { message: "supabase client is null" };
+
+    return Response.json({
+      ok: false,
+      supabaseUrlExists: Boolean(url),
+      anonKeyExists: Boolean(key),
+      anonKeyLength: key.length,
       results: tables.map((table) => ({
         table,
         count: null,
-        error: "Supabase is not configured.",
+        countErrorRaw: errorToRaw(error),
+        countErrorMessage: error.message,
+        sampleLength: null,
+        sampleErrorRaw: errorToRaw(error),
+        sampleErrorMessage: error.message,
       })),
     });
   }
 
-  const results = await Promise.all(
-    tables.map(async (table) => {
-      const { count, error } = await supabase
-        .from(table)
-        .select("*", { count: "exact", head: true });
+  const client = supabase;
 
-      return {
-        table,
-        count,
-        error: error?.message ?? null,
-      };
-    })
-  );
+  async function checkTable(table: string) {
+    const countResult = await client
+      .from(table)
+      .select("*", { count: "exact", head: true });
 
-  return NextResponse.json({ results });
+    const sampleResult = await client.from(table).select("*").limit(1);
+
+    return {
+      table,
+
+      count: countResult.count,
+      countErrorRaw: countResult.error
+        ? JSON.stringify(countResult.error)
+        : null,
+      countErrorMessage: countResult.error?.message || null,
+
+      sampleLength: sampleResult.data?.length ?? null,
+      sampleErrorRaw: sampleResult.error
+        ? JSON.stringify(sampleResult.error)
+        : null,
+      sampleErrorMessage: sampleResult.error?.message || null,
+    };
+  }
+
+  const results = await Promise.all([
+    ...tables.map((table) => checkTable(table)),
+  ]);
+
+  return Response.json({
+    ok: true,
+    supabaseUrlExists: Boolean(url),
+    anonKeyExists: Boolean(key),
+    anonKeyLength: key.length,
+    results,
+  });
 }
