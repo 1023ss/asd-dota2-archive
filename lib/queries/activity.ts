@@ -5,6 +5,10 @@ export async function getEventActivityCounts(): Promise<Map<string, number>> {
   if (!isSupabaseConfigured()) return new Map();
 
   const supabase = await createClient();
+  if (!supabase) {
+    return new Map();
+  }
+
   const { data, error } = await supabase
     .from("event_team_members")
     .select("uid, event_id")
@@ -42,6 +46,9 @@ export async function getPlayerEventActivity(uid: string): Promise<number> {
   if (!isSupabaseConfigured()) return 0;
 
   const supabase = await createClient();
+  if (!supabase) {
+    return 0;
+  }
   const normalizedUid = decodeURIComponent(uid);
 
   const { data, error } = await supabase

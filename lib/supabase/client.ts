@@ -5,9 +5,12 @@ export function createClient() {
   const url = getSupabaseUrl();
   const key = getSupabaseAnonKey();
 
+  // CloudBase / Next build 阶段可能拿不到环境变量。
+  // 这里不能 throw，否则静态预渲染 /admin、/captain 页面会失败。
   if (!url || !key) {
-    throw new Error(
-      "Supabase 未配置：请在 .env.local 中设置 NEXT_PUBLIC_SUPABASE_URL 与 NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    return createBrowserClient(
+      "https://placeholder.supabase.co",
+      "placeholder-anon-key"
     );
   }
 

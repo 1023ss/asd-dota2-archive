@@ -88,6 +88,8 @@ async function resolvePlayerNickname(uid: string): Promise<string | null> {
   if (!isSupabaseConfigured()) return null;
 
   const supabase = await createClient();
+  if (!supabase) return null;
+
   const { data } = await supabase
     .from("users")
     .select("nickname")

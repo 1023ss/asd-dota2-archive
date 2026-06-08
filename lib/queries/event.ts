@@ -40,6 +40,8 @@ export async function getEventResults(limit?: number): Promise<EventResult[]> {
   if (!isSupabaseConfigured()) return [];
 
   const supabase = await createClient();
+  if (!supabase) return [];
+
   let query = supabase
     .from("event_results_v2")
     .select("id,event_name,event_date,poster_url,champions,sponsors")
@@ -64,6 +66,8 @@ export async function getEventById(eventId: number): Promise<EventResult | null>
   }
 
   const supabase = await createClient();
+  if (!supabase) return null;
+
   const { data, error } = await supabase
     .from("event_results_v2")
     .select("id,event_name,event_date,poster_url,champions,sponsors,event_type,status")
@@ -85,6 +89,7 @@ export async function getEventTeams(eventId: number): Promise<EventTeam[]> {
   }
 
   const supabase = await createClient();
+  if (!supabase) return [];
 
   const { data: teams, error: teamsError } = await supabase
     .from("event_teams")

@@ -181,6 +181,10 @@ export async function getLeaderboard(): Promise<Player[]> {
   }
 
   const supabase = await createClient();
+  if (!supabase) {
+    return attachEventActivity(getLocalPlayers(), activityCounts);
+  }
+
   const joined = await fetchLeaderboardWithJoin(supabase);
   if (joined?.length) {
     return attachEventActivity(joined, activityCounts);
@@ -229,6 +233,31 @@ export async function getActivityLeaderboard(limit = 10): Promise<Player[]> {
   }
 
   const supabase = await createClient();
+  if (!supabase) {
+    return top.map(([uid, event_activity]) => {
+      const local = getLocalPlayerByUid(uid);
+      return {
+        ...(local ?? {
+          uid,
+          nickname: uid,
+          tag: null,
+          group_id: null,
+          avatar_url: null,
+          position: null,
+          self_description: null,
+          is_new_player: false,
+          steam_id: null,
+          base_power: null,
+          activity_bonus: null,
+          performance_adjustment: null,
+          ranking_adjustment: null,
+          current_power: null,
+        }),
+        event_activity,
+      };
+    });
+  }
+
   const uids = top.map(([uid]) => uid);
   const profiles = await fetchUserProfilesMap(supabase, uids);
 
@@ -255,6 +284,10 @@ export async function getPlayerByUid(uid: string): Promise<Player | null> {
   }
 
   const supabase = await createClient();
+  if (!supabase) {
+    return getLocalPlayerByUid(uid) ?? null;
+  }
+
   const normalizedUid = decodeURIComponent(uid);
 
   const { data: powerRow, error: powerError } = await supabase
@@ -294,6 +327,12 @@ export async function getArchiveStats() {
   }
 
   const supabase = await createClient();
+  if (!supabase) {
+    return {
+      ...getLocalStats(),
+      eventCount: getLocalEventCount(),
+    };
+  }
 
   const { data: topRow } = await supabase
     .from("power_records")
