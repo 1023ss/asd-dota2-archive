@@ -11,6 +11,7 @@ interface PlayerProfile {
   steam_id: string | null;
   bio: string | null;
   self_description?: string | null;
+  position: string | null;
   role: string | null;
   is_new_player: boolean | null;
 }
@@ -25,7 +26,24 @@ export default function MePage() {
 
   const [steamId, setSteamId] = useState("");
   const [bio, setBio] = useState("");
-
+  const [positions, setPositions] = useState<string[]>([]);
+  const positionOptions = [
+    { value: "1", label: "1号位 / Carry" },
+    { value: "2", label: "2号位 / Mid" },
+    { value: "3", label: "3号位 / Offlane" },
+    { value: "4", label: "4号位 / Soft Support" },
+    { value: "5", label: "5号位 / Hard Support" },
+  ];
+  
+  function togglePosition(value: string) {
+    setPositions((prev) => {
+      if (prev.includes(value)) {
+        return prev.filter((item) => item !== value);
+      }
+  
+      return [...prev, value].sort();
+    });
+  }
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -58,7 +76,7 @@ export default function MePage() {
 
       const { data, error } = await supabase
         .from("users")
-        .select("uid,nickname,steam_id,bio,self_description,role,is_new_player")
+        .select("uid,nickname,steam_id,bio,self_description,position,role,is_new_player")
         .eq("uid", uid)
         .single();
 
@@ -71,6 +89,14 @@ export default function MePage() {
       setPlayer(data as PlayerProfile);
       setSteamId(data.steam_id || "");
       setBio(data.bio || data.self_description || "");
+      setPositions(
+        data.position
+          ? data.position
+              .split(",")
+              .map((item: string) => item.trim())
+              .filter(Boolean)
+          : []
+      );
       setLoading(false);
     }
 
@@ -113,7 +139,9 @@ export default function MePage() {
       .update({
         steam_id: steamId.trim() || null,
         bio: bio.trim() || null,
+        position: positions.length > 0 ? positions.join(", ") : null,
       })
+    
       .eq("uid", player.uid);
 
     if (error) {
@@ -217,7 +245,34 @@ export default function MePage() {
               className="w-full border border-white/10 bg-black/60 px-4 py-3 text-white outline-none focus:border-[var(--accent)]"
             />
           </div>
+          <div>
+  <label className="mb-3 block text-sm text-white">常玩位置</label>
 
+            <div className="grid gap-3 sm:grid-cols-2">
+              {positionOptions.map((option) => {
+                const checked = positions.includes(option.value);
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => togglePosition(option.value)}
+                    className={
+                      checked
+                        ? "border border-[var(--accent)] bg-[var(--accent)]/20 px-4 py-3 text-left text-sm font-bold text-white"
+                        : "border border-white/10 bg-black/60 px-4 py-3 text-left text-sm text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-white"
+                    }
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mt-2 text-xs text-[var(--muted)]">
+              可多选，例如 4、5 号位辅助玩家可以同时选择 4号位 和 5号位。
+            </p>
+          </div>
           <div>
             <label className="mb-2 block text-sm text-white">自我介绍</label>
             <textarea

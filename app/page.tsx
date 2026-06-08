@@ -57,7 +57,7 @@ export default async function HomePage() {
 
         <div className="hero-banner__media" aria-hidden>
           <Image
-            src="/hero-nevermore-bg.png"
+            src="/img2.png"
             alt=""
             fill
             priority

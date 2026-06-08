@@ -317,7 +317,7 @@ body {
 .hero-banner {
   position: relative;
   isolation: isolate;
-  min-height: clamp(280px, 36vh, 400px);
+  min-height: clamp(280px, 40vh, 460px);
 }
 
 .hero-banner__media {
@@ -328,10 +328,13 @@ body {
 }
 
 .hero-banner__image {
+  --hero-scale-from: 1.03;
+  --hero-scale-to: 1.06;
+  --hero-shift-x: -8%;
   object-fit: cover;
-  object-position: 68% 42%;
-  transform: scale(1.08);
-  filter: brightness(0.78) saturate(1.15) contrast(1.08);
+  object-position: 58% 48%;
+  transform: translate3d(var(--hero-shift-x), 0, 0) scale(var(--hero-scale-from));
+  filter: brightness(0.74) saturate(1.08) contrast(1.14);
   animation: hero-bg-drift 36s ease-in-out infinite alternate;
 }
 
@@ -342,17 +345,17 @@ body {
   background:
     linear-gradient(
       90deg,
-      rgba(6, 6, 8, 0.82) 0%,
-      rgba(6, 6, 8, 0.65) 28%,
-      rgba(6, 6, 8, 0.22) 52%,
-      rgba(6, 6, 8, 0.06) 72%,
-      rgba(6, 6, 8, 0.18) 100%
+      rgba(6, 6, 8, 0.9) 0%,
+      rgba(6, 6, 8, 0.72) 30%,
+      rgba(6, 6, 8, 0.22) 56%,
+      rgba(6, 6, 8, 0.08) 76%,
+      rgba(6, 6, 8, 0.28) 100%
     ),
     linear-gradient(
       to bottom,
-      rgba(6, 6, 8, 0.3) 0%,
-      transparent 42%,
-      rgba(6, 6, 8, 0.38) 82%,
+      rgba(6, 6, 8, 0.36) 0%,
+      rgba(6, 6, 8, 0.04) 40%,
+      rgba(6, 6, 8, 0.44) 82%,
       var(--background) 100%
     );
   pointer-events: none;
@@ -363,9 +366,9 @@ body {
   inset: 0;
   z-index: 2;
   background: radial-gradient(
-    ellipse 45% 70% at 78% 48%,
-    rgba(214, 40, 40, 0.32),
-    transparent 68%
+    ellipse 42% 58% at 76% 54%,
+    rgba(214, 40, 40, 0.3),
+    transparent 70%
   );
   mix-blend-mode: screen;
   pointer-events: none;
@@ -378,17 +381,47 @@ body {
 
 @keyframes hero-bg-drift {
   from {
-    transform: scale(1.08) translate3d(0, 0, 0);
+    transform: translate3d(var(--hero-shift-x), 0, 0) scale(var(--hero-scale-from));
   }
   to {
-    transform: scale(1.11) translate3d(-1%, -0.5%, 0);
+    transform: translate3d(calc(var(--hero-shift-x) - 1%), -0.4%, 0) scale(var(--hero-scale-to));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-banner__image {
     animation: none;
-    transform: scale(1.03);
+    transform: translate3d(var(--hero-shift-x), 0, 0) scale(1.01);
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-banner {
+    min-height: 380px;
+  }
+
+  .hero-banner__image {
+    object-position: 62% 50%;
+    --hero-scale-from: 1.08;
+    --hero-scale-to: 1.11;
+    --hero-shift-x: -13%;
+  }
+
+  .hero-banner__overlay {
+    background:
+      linear-gradient(
+        to bottom,
+        rgba(6, 6, 8, 0.86) 0%,
+        rgba(6, 6, 8, 0.58) 32%,
+        rgba(6, 6, 8, 0.26) 58%,
+        var(--background) 100%
+      ),
+      linear-gradient(
+        90deg,
+        rgba(6, 6, 8, 0.78) 0%,
+        rgba(6, 6, 8, 0.42) 56%,
+        rgba(6, 6, 8, 0.2) 100%
+      );
   }
 }
 
