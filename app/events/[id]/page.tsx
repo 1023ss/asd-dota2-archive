@@ -6,9 +6,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 interface EventDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 function formatEventType(type?: string | null) {
@@ -27,7 +27,8 @@ function formatEventType(type?: string | null) {
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
-  const eventId = Number(params.id);
+  const { id } = await params;
+  const eventId = Number(id);
 
   if (Number.isNaN(eventId)) {
     notFound();
