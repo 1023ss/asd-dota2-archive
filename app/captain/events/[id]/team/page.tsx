@@ -36,6 +36,11 @@ interface PlayerRow {
   nickname: string | null;
 }
 
+interface PowerRow {
+  uid: string;
+  final_power: number;
+}
+
 export default function CaptainTeamEditPage() {
   const params = useParams();
   const router = useRouter();
@@ -61,6 +66,30 @@ export default function CaptainTeamEditPage() {
     const power = Number(value || 0);
     return sum + (Number.isNaN(power) ? 0 : power);
   }, 0);
+
+  async function loadPowerMap(uids: string[]) {
+    const cleanUids = Array.from(new Set(uids.map((uid) => uid.trim().toUpperCase()).filter(Boolean)));
+    if (cleanUids.length === 0) return new Map<string, number>();
+
+    try {
+      const response = await fetch(
+        `/api/power?uids=${encodeURIComponent(cleanUids.join(","))}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) return new Map<string, number>();
+
+      const payload = await response.json();
+      return new Map(
+        ((payload.rows ?? []) as PowerRow[]).map((row) => [
+          row.uid,
+          row.final_power,
+        ])
+      );
+    } catch (error) {
+      console.error("load power map:", error);
+      return new Map<string, number>();
+    }
+  }
 
   useEffect(() => {
     async function loadPage() {
@@ -146,8 +175,14 @@ export default function CaptainTeamEditPage() {
       const nextUids =
         existingUids.length > 0 ? existingUids : ["", "", "", "", ""];
 
+      const powerMap = await loadPowerMap(existingUids);
+      const calculatedPowers = existingUids.map((uid, index) => {
+        const finalPower = powerMap.get(uid.trim().toUpperCase());
+        return finalPower == null ? existingPowers[index] || "" : String(finalPower);
+      });
+
       const nextPowers =
-        existingPowers.length > 0 ? existingPowers : ["", "", "", "", ""];
+        calculatedPowers.length > 0 ? calculatedPowers : ["", "", "", "", ""];
 
       setMemberUids(nextUids);
       setMemberPowers(nextPowers);
@@ -277,9 +312,12 @@ export default function CaptainTeamEditPage() {
       return;
     }
 
+    const powerMap = await loadPowerMap(uniqueUids);
+
     const rows = cleanRows.map((row) => {
       const player = playerMap.get(row.uid);
-      const power = Number(row.power || 0);
+      const calculatedPower = powerMap.get(row.uid);
+      const power = calculatedPower ?? Number(row.power || 0);
 
       return {
         event_id: eventId,
@@ -301,10 +339,12 @@ export default function CaptainTeamEditPage() {
       return;
     }
 
+    const calculatedTotalPower = rows.reduce((sum, row) => sum + row.power, 0);
+
     const { error: updatePowerError } = await supabase
       .from("event_teams")
       .update({
-        total_power: totalPower,
+        total_power: calculatedTotalPower,
       })
       .eq("id", team.id)
       .eq("captain_uid", loginUid);
@@ -319,8 +359,9 @@ export default function CaptainTeamEditPage() {
     setTeam({
       ...team,
       team_name: teamName.trim() || `队伍${team.team_no || ""}`,
-      total_power: totalPower,
+      total_power: calculatedTotalPower,
     });
+    setMemberPowers(rows.map((row) => String(row.power)));
 
     setMessage("队伍信息已保存。");
     setSaving(false);

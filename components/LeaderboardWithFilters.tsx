@@ -110,7 +110,7 @@ export function LeaderboardWithFilters({ players }: LeaderboardWithFiltersProps)
       (p) =>
         matchesUid(p, applied.uidQuery) &&
         matchesPositions(p, applied.positionFilters) &&
-        matchesPower(p.current_power, applied.powerMin, applied.powerMax)
+        matchesPower(p.final_power, applied.powerMin, applied.powerMax)
     );
   }, [players, applied]);
 

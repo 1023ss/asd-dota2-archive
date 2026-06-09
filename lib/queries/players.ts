@@ -5,6 +5,11 @@ import {
 } from "@/lib/data/local";
 import championshipsData from "@/lib/data/championships.json";
 import { getEventActivityCounts } from "@/lib/queries/activity";
+import {
+  getCalculatedPowerMap,
+  getCalculatedPowerRows,
+  type PowerBreakdown,
+} from "@/lib/queries/power";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 import type { Player } from "@/types/player";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -22,8 +27,16 @@ function normalizeTag(row: Record<string, unknown>): string | null {
 
 function mapSupabaseRow(
   row: Record<string, unknown>,
-  power?: Record<string, unknown> | null
+  power?: (Record<string, unknown> & Partial<PowerBreakdown>) | null
 ): Player {
+  const basePower = power?.base_power != null ? Number(power.base_power) : null;
+  const finalPower =
+    power?.final_power != null
+      ? Number(power.final_power)
+      : power?.current_power != null
+        ? Number(power.current_power)
+        : basePower;
+
   return {
     uid: String(row.uid),
     nickname: String(row.nickname ?? ""),
@@ -34,7 +47,20 @@ function mapSupabaseRow(
     self_description: (row.self_description as string) || null,
     is_new_player: Boolean(row.is_new_player),
     steam_id: (row.steam_id as string) || null,
-    base_power: power?.base_power != null ? Number(power.base_power) : null,
+    base_power: basePower,
+    active_adjustment:
+      power?.active_adjustment != null ? Number(power.active_adjustment) : 0,
+    newcomer_bonus:
+      power?.newcomer_bonus != null ? Number(power.newcomer_bonus) : 0,
+    legacy_champion_bonus:
+      power?.legacy_champion_bonus != null
+        ? Number(power.legacy_champion_bonus)
+        : 0,
+    auto_champion_bonus:
+      power?.auto_champion_bonus != null
+        ? Number(power.auto_champion_bonus)
+        : 0,
+    final_power: finalPower,
     activity_bonus:
       power?.activity_bonus != null ? Number(power.activity_bonus) : null,
     performance_adjustment:
@@ -104,36 +130,22 @@ function getLocalEventCount(): number {
 async function fetchLeaderboardWithJoin(
   supabase: SupabaseClient
 ): Promise<Player[] | null> {
-  const { data: powerRows, error } = await supabase
-    .from("power_records")
-    .select(
-      `
-      uid,
-      base_power,
-      activity_bonus,
-      performance_adjustment,
-      ranking_adjustment,
-      current_power,
-      users (*)
-    `
-    )
-    .not("current_power", "is", null)
-    .order("current_power", { ascending: false });
-
-  if (error) {
-    console.error("fetchLeaderboardWithJoin:", error);
-  }
-  if (error || !powerRows?.length) {
+  const powerRows = await getCalculatedPowerRows(supabase).catch((error) => {
+    console.error("fetchLeaderboardWithJoin calculated power:", error);
+    return [];
+  });
+  if (!powerRows.length) {
     return null;
   }
 
-  return powerRows.map((row) => {
-    const joined = row.users;
-    const player = Array.isArray(joined)
-      ? (joined[0] as Record<string, unknown> | undefined)
-      : (joined as Record<string, unknown> | null);
-    return mapSupabaseRow(player ?? { uid: row.uid }, row);
-  });
+  const profiles = await fetchUserProfilesMap(
+    supabase,
+    powerRows.map((row) => row.uid)
+  );
+
+  return powerRows.map((row) =>
+    mergeWithLocalProfile(row.uid, row as unknown as Record<string, unknown>, profiles)
+  );
 }
 
 async function fetchLeaderboardPowerOnly(
@@ -144,8 +156,8 @@ async function fetchLeaderboardPowerOnly(
     .select(
       "uid, base_power, activity_bonus, performance_adjustment, ranking_adjustment, current_power"
     )
-    .not("current_power", "is", null)
-    .order("current_power", { ascending: false });
+    .not("base_power", "is", null)
+    .order("base_power", { ascending: false });
 
   if (error || !powerRows?.length) {
     return null;
@@ -222,6 +234,11 @@ export async function getActivityLeaderboard(limit = 10): Promise<Player[]> {
           is_new_player: false,
           steam_id: null,
           base_power: null,
+          active_adjustment: 0,
+          newcomer_bonus: 0,
+          legacy_champion_bonus: 0,
+          auto_champion_bonus: 0,
+          final_power: null,
           activity_bonus: null,
           performance_adjustment: null,
           ranking_adjustment: null,
@@ -248,6 +265,11 @@ export async function getActivityLeaderboard(limit = 10): Promise<Player[]> {
           is_new_player: false,
           steam_id: null,
           base_power: null,
+          active_adjustment: 0,
+          newcomer_bonus: 0,
+          legacy_champion_bonus: 0,
+          auto_champion_bonus: 0,
+          final_power: null,
           activity_bonus: null,
           performance_adjustment: null,
           ranking_adjustment: null,
@@ -261,19 +283,17 @@ export async function getActivityLeaderboard(limit = 10): Promise<Player[]> {
   const uids = top.map(([uid]) => uid);
   const profiles = await fetchUserProfilesMap(supabase, uids);
 
-  const { data: powerRows } = await supabase
-    .from("power_records")
-    .select(
-      "uid, base_power, activity_bonus, performance_adjustment, ranking_adjustment, current_power"
-    )
-    .in("uid", uids);
-
-  const powerMap = new Map(
-    (powerRows ?? []).map((row) => [String(row.uid), row as Record<string, unknown>])
-  );
+  const powerMap = await getCalculatedPowerMap(supabase, uids).catch((error) => {
+    console.error("getActivityLeaderboard calculated power:", error);
+    return new Map();
+  });
 
   return top.map(([uid, event_activity]) => ({
-    ...mergeWithLocalProfile(uid, powerMap.get(uid) ?? null, profiles),
+    ...mergeWithLocalProfile(
+      uid,
+      (powerMap.get(uid) as unknown as Record<string, unknown>) ?? null,
+      profiles
+    ),
     event_activity,
   }));
 }
@@ -290,11 +310,13 @@ export async function getPlayerByUid(uid: string): Promise<Player | null> {
 
   const normalizedUid = decodeURIComponent(uid);
 
-  const { data: powerRow, error: powerError } = await supabase
-    .from("power_records")
-    .select("*")
-    .eq("uid", normalizedUid)
-    .maybeSingle();
+  const powerMap = await getCalculatedPowerMap(supabase, [normalizedUid]).catch(
+    (error) => {
+      console.error("getPlayerByUid calculated power:", error);
+      return new Map();
+    }
+  );
+  const powerRow = powerMap.get(normalizedUid.toUpperCase());
 
   const { data: playerRow, error: playerError } = await supabase
     .from("users")
@@ -307,12 +329,19 @@ export async function getPlayerByUid(uid: string): Promise<Player | null> {
   }
 
   if (playerRow && !playerError) {
-    return mapSupabaseRow(playerRow, powerRow);
+    return mapSupabaseRow(
+      playerRow,
+      powerRow as unknown as Record<string, unknown>
+    );
   }
 
-  if (powerRow && !powerError) {
+  if (powerRow) {
     const profiles = await fetchUserProfilesMap(supabase, [normalizedUid]);
-    return mergeWithLocalProfile(normalizedUid, powerRow, profiles);
+    return mergeWithLocalProfile(
+      normalizedUid,
+      powerRow as unknown as Record<string, unknown>,
+      profiles
+    );
   }
 
   return getLocalPlayerByUid(uid) ?? null;
@@ -334,13 +363,10 @@ export async function getArchiveStats() {
     };
   }
 
-  const { data: topRow } = await supabase
-    .from("power_records")
-    .select("current_power")
-    .not("current_power", "is", null)
-    .order("current_power", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const powerRows = await getCalculatedPowerRows(supabase).catch((error) => {
+    console.error("getArchiveStats calculated power:", error);
+    return [];
+  });
 
   const { count: playerCount } = await supabase
     .from("users")
@@ -349,7 +375,7 @@ export async function getArchiveStats() {
   const { count: powerCount } = await supabase
     .from("power_records")
     .select("*", { count: "exact", head: true })
-    .not("current_power", "is", null);
+    .not("base_power", "is", null);
 
   const { count: eventCount } = await supabase
     .from("event_results_v2")
@@ -366,7 +392,7 @@ export async function getArchiveStats() {
 
   return {
     totalPlayers,
-    topPower: topRow?.current_power ?? 0,
+    topPower: powerRows[0]?.final_power ?? 0,
     eventCount: eventCount ?? getLocalEventCount(),
   };
 }

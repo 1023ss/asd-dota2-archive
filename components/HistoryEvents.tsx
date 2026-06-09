@@ -18,10 +18,10 @@ export function EventMemberList({ members }: { members: EventMember[] }) {
             <Link
               key={key}
               href={`/players/${member.uid}`}
-              className="border border-[var(--accent)]/30 px-2 py-1 text-xs text-[var(--accent-bright)] transition hover:bg-[var(--accent)]/10"
+              className="border border-[rgba(239,68,68,0.35)] bg-[rgba(239,68,68,0.16)] px-2 py-1 text-xs text-[#f4f4f5] transition hover:bg-[rgba(255,255,255,0.045)]"
             >
               {member.nickname}
-              <span className="ml-1 font-mono text-[10px] text-[var(--muted)]">
+              <span className="ml-1 font-mono text-[10px] text-[#fca5a5]">
                 {member.uid}
               </span>
             </Link>

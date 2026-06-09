@@ -98,7 +98,7 @@ export function LeaderboardTable({
                 </td>
                 <td className="px-5 py-3.5 text-right">
                   <span className="font-mono text-lg font-bold text-[var(--accent-bright)]">
-                    {player.current_power ?? "—"}
+                    {player.final_power ?? "—"}
                   </span>
                 </td>
               </tr>

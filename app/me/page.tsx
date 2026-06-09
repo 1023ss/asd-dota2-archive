@@ -16,6 +16,14 @@ interface PlayerProfile {
   is_new_player: boolean | null;
 }
 
+interface PowerBreakdown {
+  final_power: number;
+}
+
+function isAdminRole(role: string | null | undefined) {
+  return role?.trim().toLowerCase() === "admin";
+}
+
 export default function MePage() {
   const router = useRouter();
   const supabase = createClient();
@@ -23,6 +31,7 @@ export default function MePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [player, setPlayer] = useState<PlayerProfile | null>(null);
+  const [power, setPower] = useState<PowerBreakdown | null>(null);
 
   const [steamId, setSteamId] = useState("");
   const [bio, setBio] = useState("");
@@ -87,6 +96,18 @@ export default function MePage() {
       }
 
       setPlayer(data as PlayerProfile);
+      try {
+        const powerResponse = await fetch(
+          `/api/power?uids=${encodeURIComponent(uid)}`,
+          { cache: "no-store" }
+        );
+        if (powerResponse.ok) {
+          const powerPayload = await powerResponse.json();
+          setPower(powerPayload.rows?.[0] ?? null);
+        }
+      } catch {
+        // Power display is optional on this page.
+      }
       setSteamId(data.steam_id || "");
       setBio(data.bio || data.self_description || "");
       setPositions(
@@ -145,7 +166,6 @@ export default function MePage() {
       .eq("uid", player.uid);
 
     if (error) {
-      console.error(error);
       setErrorMessage("保存失败，请稍后再试。");
       setSaving(false);
       return;
@@ -230,6 +250,13 @@ export default function MePage() {
               <span className="text-[var(--muted)]">新人</span>
               <span className="text-white">
                 {player.is_new_player ? "是" : "否"}
+              </span>
+            </div>
+
+            <div className="flex justify-between gap-4">
+              <span className="text-[var(--muted)]">最终战力</span>
+              <span className="font-mono text-white">
+                {power?.final_power ?? "-"}
               </span>
             </div>
           </div>
@@ -318,7 +345,7 @@ export default function MePage() {
               </span>
             </div>
           </Link>
-         </div>{player?.role === "admin" && (
+         </div>{isAdminRole(player?.role) && (
         <div className="mt-4 border border-white/10 bg-black/40 p-5">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent)]">
             Admin Tools
@@ -330,7 +357,7 @@ export default function MePage() {
             管理比赛、队伍坑位和玩家邀请码。
             </p>
 
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-4 flex flex-col flex-wrap gap-3 sm:flex-row">
             <Link
                 href="/admin/events"
                 className="border border-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
@@ -343,6 +370,18 @@ export default function MePage() {
                 className="border border-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
             >
                 邀请码管理
+            </Link>
+            <Link
+                href="/admin/bulletins"
+                className="border border-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
+            >
+                ASD 大字报管理
+            </Link>
+            <Link
+                href="/admin/sponsors"
+                className="border border-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
+            >
+                赞助展示管理
             </Link>
             </div>
         </div>

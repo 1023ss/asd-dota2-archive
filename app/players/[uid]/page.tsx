@@ -98,7 +98,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
               当前战力
             </p>
             <p className="stat-value mt-1 text-4xl sm:text-5xl">
-              {player.current_power ?? "—"}
+              {player.final_power ?? "—"}
             </p>
           </div>
         </div>
@@ -141,12 +141,16 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
         <SectionHeader label="Power" title="战力构成" />
         <div className="grid gap-3 sm:grid-cols-2">
           <PowerRow label="基础战力" value={player.base_power} />
-          <PowerRow label="活跃加成" value={player.activity_bonus} />
+          <PowerRow label="活跃调整" value={player.active_adjustment} />
+          <PowerRow label="新人加成" value={player.newcomer_bonus} />
           <PowerRow
-            label="表现调整"
-            value={player.performance_adjustment}
+            label="历史冠军加成"
+            value={player.legacy_champion_bonus}
           />
-          <PowerRow label="排名调整" value={player.ranking_adjustment} />
+          <PowerRow
+            label="自动冠军加成"
+            value={player.auto_champion_bonus}
+          />
         </div>
       </section>
 

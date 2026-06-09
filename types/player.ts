@@ -9,6 +9,11 @@ export interface Player {
   is_new_player: boolean;
   steam_id: string | null;
   base_power: number | null;
+  active_adjustment: number | null;
+  newcomer_bonus: number | null;
+  legacy_champion_bonus: number | null;
+  auto_champion_bonus: number | null;
+  final_power: number | null;
   activity_bonus: number | null;
   performance_adjustment: number | null;
   ranking_adjustment: number | null;
@@ -32,6 +37,11 @@ export interface PlayerRow {
 export interface PowerRecordRow {
   uid: string;
   base_power: number | null;
+  active_adjustment: number | null;
+  newcomer_bonus: number | null;
+  legacy_champion_bonus: number | null;
+  auto_champion_bonus: number | null;
+  final_power: number | null;
   activity_bonus: number | null;
   performance_adjustment: number | null;
   ranking_adjustment: number | null;
