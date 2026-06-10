@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -39,6 +39,27 @@ interface PlayerRow {
 interface PowerRow {
   uid: string;
   final_power: number;
+  active_adjustment: number;
+}
+
+interface PowerReference {
+  power: number;
+  label: string;
+}
+
+function formatPowerReference(row: PowerRow): PowerReference {
+  const restoredActiveAdjustment = Math.max(
+    0,
+    -Number(row.active_adjustment || 0)
+  );
+
+  return {
+    power: row.final_power,
+    label:
+      restoredActiveAdjustment > 0
+        ? `${row.final_power} +${restoredActiveAdjustment}`
+        : String(row.final_power),
+  };
 }
 
 export default function CaptainTeamEditPage() {
@@ -58,6 +79,20 @@ export default function CaptainTeamEditPage() {
   const [teamName, setTeamName] = useState("");
   const [memberUids, setMemberUids] = useState(["", "", "", "", ""]);
   const [memberPowers, setMemberPowers] = useState(["", "", "", "", ""]);
+  const [memberReferencePowers, setMemberReferencePowers] = useState([
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
+  const [memberPowerTouched, setMemberPowerTouched] = useState([
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
 
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -67,29 +102,29 @@ export default function CaptainTeamEditPage() {
     return sum + (Number.isNaN(power) ? 0 : power);
   }, 0);
 
-  async function loadPowerMap(uids: string[]) {
+  const loadPowerMap = useCallback(async (uids: string[]) => {
     const cleanUids = Array.from(new Set(uids.map((uid) => uid.trim().toUpperCase()).filter(Boolean)));
-    if (cleanUids.length === 0) return new Map<string, number>();
+    if (cleanUids.length === 0) return new Map<string, PowerReference>();
 
     try {
       const response = await fetch(
         `/api/power?uids=${encodeURIComponent(cleanUids.join(","))}`,
         { cache: "no-store" }
       );
-      if (!response.ok) return new Map<string, number>();
+      if (!response.ok) return new Map<string, PowerReference>();
 
       const payload = await response.json();
       return new Map(
         ((payload.rows ?? []) as PowerRow[]).map((row) => [
           row.uid,
-          row.final_power,
+          formatPowerReference(row),
         ])
       );
     } catch (error) {
       console.error("load power map:", error);
-      return new Map<string, number>();
+      return new Map<string, PowerReference>();
     }
-  }
+  }, []);
 
   useEffect(() => {
     async function loadPage() {
@@ -176,16 +211,20 @@ export default function CaptainTeamEditPage() {
         existingUids.length > 0 ? existingUids : ["", "", "", "", ""];
 
       const powerMap = await loadPowerMap(existingUids);
-      const calculatedPowers = existingUids.map((uid, index) => {
-        const finalPower = powerMap.get(uid.trim().toUpperCase());
-        return finalPower == null ? existingPowers[index] || "" : String(finalPower);
+      const referencePowers = existingUids.map((uid) => {
+        const referencePower = powerMap.get(uid.trim().toUpperCase());
+        return referencePower?.label ?? "";
       });
 
       const nextPowers =
-        calculatedPowers.length > 0 ? calculatedPowers : ["", "", "", "", ""];
+        existingPowers.length > 0 ? existingPowers : ["", "", "", "", ""];
+      const nextReferences =
+        referencePowers.length > 0 ? referencePowers : ["", "", "", "", ""];
 
       setMemberUids(nextUids);
       setMemberPowers(nextPowers);
+      setMemberReferencePowers(nextReferences);
+      setMemberPowerTouched(nextPowers.map((power) => power !== ""));
 
       setLoading(false);
     }
@@ -193,12 +232,39 @@ export default function CaptainTeamEditPage() {
     if (!Number.isNaN(eventId)) {
       loadPage();
     }
-  }, [eventId, router, supabase]);
+  }, [eventId, loadPowerMap, router, supabase]);
 
-  function updateMemberUid(index: number, value: string) {
+  async function updateMemberUid(index: number, value: string) {
+    const normalizedUid = value.toUpperCase().trim();
     const next = [...memberUids];
-    next[index] = value.toUpperCase().trim();
+    next[index] = normalizedUid;
     setMemberUids(next);
+
+    const nextReferences = [...memberReferencePowers];
+    nextReferences[index] = "";
+    setMemberReferencePowers(nextReferences);
+
+    if (!normalizedUid) return;
+
+    const powerMap = await loadPowerMap([normalizedUid]);
+    const referencePower = powerMap.get(normalizedUid);
+    if (referencePower == null) return;
+
+    setMemberReferencePowers((prev) => {
+      const updated = [...prev];
+      if (index >= updated.length) return prev;
+      updated[index] = referencePower.label;
+      return updated;
+    });
+
+    if (!memberPowerTouched[index]) {
+      setMemberPowers((prev) => {
+        const updated = [...prev];
+        if (index >= updated.length) return prev;
+        updated[index] = String(referencePower.power);
+        return updated;
+      });
+    }
   }
 
   function updateMemberPower(index: number, value: string) {
@@ -208,16 +274,25 @@ export default function CaptainTeamEditPage() {
     next[index] = value.replace(/[^\d]/g, "");
 
     setMemberPowers(next);
+    setMemberPowerTouched((prev) => {
+      const updated = [...prev];
+      updated[index] = true;
+      return updated;
+    });
   }
 
   function addMemberInput() {
     setMemberUids((prev) => [...prev, ""]);
     setMemberPowers((prev) => [...prev, ""]);
+    setMemberReferencePowers((prev) => [...prev, ""]);
+    setMemberPowerTouched((prev) => [...prev, false]);
   }
 
   function removeMemberInput(index: number) {
     setMemberUids((prev) => prev.filter((_, i) => i !== index));
     setMemberPowers((prev) => prev.filter((_, i) => i !== index));
+    setMemberReferencePowers((prev) => prev.filter((_, i) => i !== index));
+    setMemberPowerTouched((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -312,12 +387,9 @@ export default function CaptainTeamEditPage() {
       return;
     }
 
-    const powerMap = await loadPowerMap(uniqueUids);
-
     const rows = cleanRows.map((row) => {
       const player = playerMap.get(row.uid);
-      const calculatedPower = powerMap.get(row.uid);
-      const power = calculatedPower ?? Number(row.power || 0);
+      const power = Number(row.power || 0);
 
       return {
         event_id: eventId,
@@ -362,6 +434,7 @@ export default function CaptainTeamEditPage() {
       total_power: calculatedTotalPower,
     });
     setMemberPowers(rows.map((row) => String(row.power)));
+    setMemberPowerTouched(rows.map(() => true));
 
     setMessage("队伍信息已保存。");
     setSaving(false);
@@ -455,7 +528,7 @@ export default function CaptainTeamEditPage() {
               {memberUids.map((memberUid, index) => (
                 <div
                   key={index}
-                  className="grid gap-2 sm:grid-cols-[1fr_140px_auto]"
+                  className="grid gap-2 sm:grid-cols-[1fr_120px_140px_auto]"
                 >
                   <input
                     value={memberUid}
@@ -466,6 +539,20 @@ export default function CaptainTeamEditPage() {
                     placeholder={`队员 ${index + 1} UID，例如 AS006`}
                     className="w-full border border-white/10 bg-black/60 px-4 py-3 font-mono text-white outline-none focus:border-[var(--accent)] disabled:opacity-50"
                   />
+
+                  <div className="border border-white/10 bg-black/30 px-3 py-2">
+                    <p className="text-[10px] text-[var(--muted)]">
+                      当前战力
+                    </p>
+                    <p className="font-mono text-sm font-bold text-white">
+                      {memberReferencePowers[index] || "-"}
+                    </p>
+                    {memberReferencePowers[index]?.includes(" +") && (
+                      <p className="text-[10px] text-[var(--muted)]">
+                        活跃度调整还原
+                      </p>
+                    )}
+                  </div>
 
                   <input
                     value={memberPowers[index] || ""}
