@@ -6,9 +6,9 @@
   --foreground: #e8e3dd;
   --muted: #9a948d;
   --muted-weak: #6f6964;
-  --surface: rgba(15, 15, 19, 0.86);
-  --surface-elevated: rgba(22, 20, 24, 0.82);
-  --surface-row: rgba(18, 17, 21, 0.76);
+  --surface: rgba(12, 12, 16, 0.82);
+  --surface-elevated: rgba(14, 13, 18, 0.86);
+  --surface-row: rgba(12, 12, 16, 0.72);
   --surface-hover: rgba(255, 238, 220, 0.045);
   --accent: #a83232;
   --accent-bright: #d64a3a;
@@ -34,9 +34,15 @@
 
 /* ── Base ── */
 body {
+  position: relative;
   background: var(--background-deep);
   color: var(--foreground);
   font-family: var(--font-sans);
+}
+
+body > :not(.site-bg) {
+  position: relative;
+  z-index: 1;
 }
 
 /* ── White outline glow cursors (arrow / star / text) ── */
@@ -69,12 +75,29 @@ body {
 .site-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(3, 3, 5, 0.62) 0%,
+      rgba(5, 5, 8, 0.52) 34%,
+      rgba(7, 7, 10, 0.7) 100%
+    ),
+    radial-gradient(ellipse 74% 54% at 50% 6%, rgba(168, 32, 38, 0.2), transparent 62%),
+    radial-gradient(ellipse 56% 44% at 82% 22%, rgba(168, 50, 50, 0.1), transparent 68%),
+    radial-gradient(ellipse 48% 38% at 8% 78%, rgba(95, 28, 32, 0.08), transparent 72%),
+    url("/site-bg.png");
+  background-position: center top, center top, center top, center top, center top;
+  background-size: cover, cover, cover, cover, cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+body:has(.home-page-no-site-bg) .site-bg {
   background:
     radial-gradient(ellipse 70% 48% at 50% -12%, rgba(95, 28, 32, 0.18), transparent 62%),
     radial-gradient(ellipse 52% 42% at 92% 18%, rgba(117, 68, 38, 0.1), transparent 66%),
-    radial-gradient(ellipse 42% 34% at 6% 78%, rgba(95, 28, 32, 0.1), transparent 70%),
     linear-gradient(180deg, #050507 0%, #08080b 48%, #0b0a0d 100%);
 }
 
@@ -82,44 +105,33 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      rgba(232, 227, 221, 0.015) 0,
-      rgba(232, 227, 221, 0.015) 1px,
-      transparent 1px,
-      transparent 48px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgba(232, 227, 221, 0.012) 0,
-      rgba(232, 227, 221, 0.012) 1px,
-      transparent 1px,
-      transparent 56px
-    ),
-    linear-gradient(135deg, rgba(232, 227, 221, 0.015), transparent 36%);
-  background-size: auto;
-  opacity: 0.62;
-  mask-image: radial-gradient(ellipse 82% 72% at 50% 28%, black 16%, transparent 78%);
+  background:
+    radial-gradient(ellipse 78% 64% at 50% 28%, transparent 0%, rgba(0, 0, 0, 0.04) 48%, rgba(0, 0, 0, 0.48) 100%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.48), transparent 20%, transparent 80%, rgba(0, 0, 0, 0.48)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.26), transparent 22%, rgba(0, 0, 0, 0.42) 100%);
 }
 
 .site-bg::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 50%;
-  translate: -50% 0;
-  width: min(900px, 90vw);
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(168, 50, 50, 0.38) 30%,
-    rgba(232, 227, 221, 0.28) 50%,
-    rgba(184, 138, 69, 0.24) 70%,
-    transparent
-  );
-  opacity: 0.44;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(232, 227, 221, 0.012) 0,
+      rgba(232, 227, 221, 0.012) 1px,
+      transparent 1px,
+      transparent 54px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(232, 227, 221, 0.01) 0,
+      rgba(232, 227, 221, 0.01) 1px,
+      transparent 1px,
+      transparent 64px
+    );
+  opacity: 0.36;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 34%, black 16%, transparent 82%);
 }
 
 /* ── Kuro panel (corner brackets) ── */
@@ -127,11 +139,11 @@ body {
   position: relative;
   background: linear-gradient(
     160deg,
-    rgba(22, 20, 24, 0.8) 0%,
-    rgba(15, 15, 19, 0.9) 100%
+    rgba(14, 13, 18, 0.84) 0%,
+    rgba(12, 12, 16, 0.9) 100%
   );
   border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34);
 }
 
@@ -338,7 +350,7 @@ body {
   width: 0;
 }
 
-/* Keep the homepage hero visually unchanged while the rest of the site theme softens. */
+/* Keep the homepage hero structure and title unchanged while tinting the media to match the site background. */
 .hero-banner {
   --background: #060608;
   --foreground: #ececee;
@@ -365,16 +377,19 @@ body {
   inset: 0;
   z-index: 0;
   overflow: hidden;
+  background:
+    radial-gradient(ellipse 72% 58% at 68% 34%, rgba(255, 255, 255, 0.06), transparent 64%),
+    linear-gradient(180deg, rgba(4, 4, 7, 0.08), var(--background) 100%);
 }
 
 .hero-banner__image {
   --hero-scale-from: 1.03;
   --hero-scale-to: 1.06;
-  --hero-shift-x: -8%;
+  --hero-shift-x: -4%;
   object-fit: cover;
-  object-position: 58% 48%;
+  object-position: 62% 48%;
   transform: translate3d(var(--hero-shift-x), 0, 0) scale(var(--hero-scale-from));
-  filter: brightness(0.74) saturate(1.08) contrast(1.14);
+  filter: brightness(0.82) saturate(1) contrast(1.06);
   animation: hero-bg-drift 36s ease-in-out infinite alternate;
 }
 
@@ -385,17 +400,23 @@ body {
   background:
     linear-gradient(
       90deg,
-      rgba(6, 6, 8, 0.9) 0%,
-      rgba(6, 6, 8, 0.72) 30%,
-      rgba(6, 6, 8, 0.22) 56%,
-      rgba(6, 6, 8, 0.08) 76%,
-      rgba(6, 6, 8, 0.28) 100%
+      rgba(3, 3, 5, 0.96) 0%,
+      rgba(4, 4, 6, 0.9) 20%,
+      rgba(5, 5, 8, 0.46) 38%,
+      rgba(5, 5, 8, 0.08) 60%,
+      rgba(5, 5, 8, 0.14) 100%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(4, 4, 7, 0.42) 0%,
+      rgba(10, 8, 9, 0.08) 46%,
+      rgba(4, 4, 7, 0.14) 100%
     ),
     linear-gradient(
       to bottom,
-      rgba(6, 6, 8, 0.36) 0%,
-      rgba(6, 6, 8, 0.04) 40%,
-      rgba(6, 6, 8, 0.44) 82%,
+      rgba(5, 5, 8, 0.18) 0%,
+      rgba(5, 5, 8, 0.02) 38%,
+      rgba(5, 5, 8, 0.34) 76%,
       var(--background) 100%
     );
   pointer-events: none;
@@ -405,12 +426,18 @@ body {
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: radial-gradient(
-    ellipse 42% 58% at 76% 54%,
-    rgba(214, 40, 40, 0.3),
-    transparent 70%
-  );
-  mix-blend-mode: screen;
+  background:
+    radial-gradient(
+      ellipse 50% 54% at 74% 48%,
+      rgba(255, 246, 235, 0.04),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 52% 34% at 36% 92%,
+      rgba(0, 0, 0, 0.22),
+      transparent 72%
+    );
+  mix-blend-mode: normal;
   pointer-events: none;
 }
 
@@ -441,26 +468,32 @@ body {
   }
 
   .hero-banner__image {
-    object-position: 62% 50%;
+    object-position: 66% 50%;
     --hero-scale-from: 1.08;
     --hero-scale-to: 1.11;
-    --hero-shift-x: -13%;
+    --hero-shift-x: -10%;
   }
 
   .hero-banner__overlay {
     background:
       linear-gradient(
+        90deg,
+        rgba(3, 3, 5, 0.96) 0%,
+        rgba(4, 4, 6, 0.82) 42%,
+        rgba(5, 5, 8, 0.16) 100%
+      ),
+      linear-gradient(
         to bottom,
-        rgba(6, 6, 8, 0.86) 0%,
-        rgba(6, 6, 8, 0.58) 32%,
-        rgba(6, 6, 8, 0.26) 58%,
+        rgba(5, 5, 8, 0.66) 0%,
+        rgba(5, 5, 8, 0.28) 32%,
+        rgba(5, 5, 8, 0.08) 58%,
         var(--background) 100%
       ),
       linear-gradient(
-        90deg,
-        rgba(6, 6, 8, 0.78) 0%,
-        rgba(6, 6, 8, 0.42) 56%,
-        rgba(6, 6, 8, 0.2) 100%
+        135deg,
+        rgba(4, 4, 7, 0.36) 0%,
+        rgba(10, 8, 9, 0.06) 48%,
+        rgba(4, 4, 7, 0.14) 100%
       );
   }
 }
@@ -526,6 +559,7 @@ body {
     [class*="bg-white/[0.03]"]
   ) {
   background-color: var(--surface);
+  backdrop-filter: blur(8px);
 }
 
 :where(main, footer) [class*="border-white/10"] {
@@ -585,7 +619,7 @@ body {
 input,
 textarea,
 select {
-  background-color: rgba(22, 20, 24, 0.78);
+  background-color: rgba(12, 12, 16, 0.78);
   border-color: var(--border);
   color: var(--foreground);
 }
@@ -615,7 +649,7 @@ tbody tr {
 }
 
 tbody tr:nth-child(even) {
-  background-color: rgba(22, 20, 24, 0.64);
+  background-color: rgba(14, 13, 18, 0.68);
 }
 
 /* ── Table row hover scan line ── */

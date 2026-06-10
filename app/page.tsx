@@ -34,6 +34,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <div className="home-page-no-site-bg" hidden />
       <section className="hero-banner overflow-hidden border-b border-[var(--border)]">
         <div className="hero-banner__content mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
           <p className="section-label mb-5">Community Archive</p>
