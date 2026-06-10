@@ -35,6 +35,10 @@ interface MemberRow {
   nickname: string | null;
 }
 
+interface PowerSourceRow extends Row {
+  uid: string;
+}
+
 function asNumber(value: unknown, fallback = 0): number {
   if (value == null || value === "") return fallback;
   const num = Number(value);
@@ -312,43 +316,21 @@ function getAutoChampionBonuses(
   return bonuses;
 }
 
-export async function getCalculatedPowerRows(
+async function buildPowerBreakdowns(
   supabase: SupabaseClient,
-  uids?: string[]
-): Promise<PowerBreakdown[]> {
-  const normalizedUids = uids?.map(normalizeUid).filter(Boolean);
-
-  let powerQuery = supabase.from("power_records").select("*");
-  if (normalizedUids?.length) {
-    powerQuery = powerQuery.in("uid", normalizedUids);
-  }
-
-  const { data: powerRows, error: powerError } = await powerQuery;
-  if (powerError || !powerRows?.length) {
-    console.error("getCalculatedPowerRows power_records:", powerError);
-    return [];
-  }
-
-  const powerUids = powerRows.map((row) => normalizeUid(row.uid)).filter(Boolean);
-
+  powerRows: PowerSourceRow[],
+  userRows: Row[],
+  sortBy: "final_power" | "uid"
+) {
   const [
-    userResult,
     startEventId,
     finishedEvents,
     allMembers,
   ] = await Promise.all([
-    supabase
-      .from("users")
-      .select("uid,nickname,is_new_player,legacy_champion_bonus")
-      .in("uid", powerUids),
     getChampionBonusStartEventId(supabase),
     fetchFinishedEvents(supabase),
     fetchAllMembers(supabase),
   ]);
-
-  if (userResult.error) {
-    console.error("getCalculatedPowerRows users:", userResult.error);
-  }
 
   const finishedEventIds = finishedEvents.map((event) => event.id);
   const [finishedTeams, finishedMembers] = await Promise.all([
@@ -357,7 +339,7 @@ export async function getCalculatedPowerRows(
   ]);
 
   const userMap = new Map(
-    (userResult.data ?? []).map((row) => [normalizeUid(row.uid), row as Row])
+    userRows.map((row) => [normalizeUid(row.uid), row])
   );
   const activeAdjustments = getActiveAdjustments(finishedEvents, finishedMembers);
   const participationCounts = getParticipationCounts(allMembers);
@@ -401,11 +383,97 @@ export async function getCalculatedPowerRows(
         ranking_adjustment: asNullableNumber(powerRow.ranking_adjustment),
       };
     })
-    .sort(
-      (a, b) =>
-        b.final_power - a.final_power ||
-        a.uid.localeCompare(b.uid, "zh-CN")
-    );
+    .sort((a, b) => {
+      if (sortBy === "final_power") {
+        return b.final_power - a.final_power || a.uid.localeCompare(b.uid, "zh-CN");
+      }
+
+      return a.uid.localeCompare(b.uid, "zh-CN");
+    });
+}
+
+export async function getCalculatedPowerRows(
+  supabase: SupabaseClient,
+  uids?: string[]
+): Promise<PowerBreakdown[]> {
+  const normalizedUids = uids?.map(normalizeUid).filter(Boolean);
+
+  let powerQuery = supabase.from("power_records").select("*");
+  if (normalizedUids?.length) {
+    powerQuery = powerQuery.in("uid", normalizedUids);
+  }
+
+  const { data: powerRows, error: powerError } = await powerQuery;
+  if (powerError || !powerRows?.length) {
+    console.error("getCalculatedPowerRows power_records:", powerError);
+    return [];
+  }
+
+  const powerUids = powerRows.map((row) => normalizeUid(row.uid)).filter(Boolean);
+
+  const userResult = await supabase
+    .from("users")
+    .select("uid,nickname,is_new_player,legacy_champion_bonus")
+    .in("uid", powerUids);
+
+  if (userResult.error) {
+    console.error("getCalculatedPowerRows users:", userResult.error);
+  }
+
+  return buildPowerBreakdowns(
+    supabase,
+    powerRows as PowerSourceRow[],
+    (userResult.data ?? []) as Row[],
+    "final_power"
+  );
+}
+
+export async function getCalculatedPowerRowsForUsers(
+  supabase: SupabaseClient,
+  uids?: string[]
+): Promise<PowerBreakdown[]> {
+  const normalizedUids = uids?.map(normalizeUid).filter(Boolean);
+
+  let userQuery = supabase
+    .from("users")
+    .select("uid,nickname,is_new_player,legacy_champion_bonus");
+
+  if (normalizedUids?.length) {
+    userQuery = userQuery.in("uid", normalizedUids);
+  }
+
+  const { data: userRows, error: userError } = await userQuery;
+  if (userError || !userRows?.length) {
+    console.error("getCalculatedPowerRowsForUsers users:", userError);
+    return [];
+  }
+
+  const userUids = userRows.map((row) => normalizeUid(row.uid)).filter(Boolean);
+  if (!userUids.length) return [];
+
+  const { data: powerRows, error: powerError } = await supabase
+    .from("power_records")
+    .select("*")
+    .in("uid", userUids);
+
+  if (powerError) {
+    console.error("getCalculatedPowerRowsForUsers power_records:", powerError);
+  }
+
+  const powerMap = new Map(
+    (powerRows ?? []).map((row) => [normalizeUid(row.uid), row as PowerSourceRow])
+  );
+
+  const completePowerRows = userUids.map(
+    (uid) => powerMap.get(uid) ?? ({ uid, base_power: 0 } as PowerSourceRow)
+  );
+
+  return buildPowerBreakdowns(
+    supabase,
+    completePowerRows,
+    userRows as Row[],
+    "uid"
+  );
 }
 
 export async function getCalculatedPowerMap(

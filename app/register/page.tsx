@@ -133,7 +133,7 @@ export default function RegisterPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-16">
       <div className="border border-white/10 bg-black/40 p-6 shadow-2xl">
-        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
+        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent-title)]">
           Member Register
         </p>
 

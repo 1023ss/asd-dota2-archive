@@ -45,7 +45,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   return (
     <main className="mx-auto min-h-screen max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="mb-10">
-        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
+        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent-title)]">
           Event Detail
         </p>
 
@@ -65,7 +65,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       <section className="border border-white/10 bg-black/40 p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent)]">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-title)]">
               Teams
             </p>
 
@@ -90,7 +90,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               <div key={team.id} className="border border-white/10 bg-black/40 p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--accent-title)]">
                       {team.team_no ? `Team ${team.team_no}` : "Team"}
                     </p>
 

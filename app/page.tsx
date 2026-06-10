@@ -156,23 +156,23 @@ export default async function HomePage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
             <Link
               href={bulletin ? `/bulletins/${bulletin.id}` : "/bulletins"}
-              className="group relative block overflow-hidden border border-[var(--border-accent)] bg-black/60 p-5 transition hover:border-[var(--accent-bright)] sm:p-6"
+              className="home-feature-card group overflow-hidden p-5 sm:p-6"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(214,40,40,0.3),transparent_36%),linear-gradient(135deg,rgba(0,0,0,0.18),rgba(0,0,0,0.9))]" />
-              <div className="pointer-events-none absolute bottom-2 right-4 font-black leading-none text-[rgba(214,40,40,0.14)] text-[5rem] sm:text-[7rem]">
+              <div className="home-feature-card__wash" />
+              <div className="home-feature-card__mark pointer-events-none absolute bottom-2 right-4 font-black leading-none text-[5rem] sm:text-[7rem]">
                 ASD
               </div>
 
               <div className="relative z-10">
                 <div className="flex items-start justify-between gap-4">
                   <p className="section-label">Bulletin</p>
-                  <span className="shrink-0 text-sm tracking-wide text-[var(--accent-bright)] transition group-hover:text-white">
+                  <span className="home-link shrink-0 text-sm tracking-wide">
                     查看历史 →
                   </span>
                 </div>
 
                 <div className="mt-5">
-                  <p className="mb-3 inline-flex border border-[var(--accent)] bg-[rgba(214,40,40,0.14)] px-3 py-1 text-xs font-bold tracking-[0.18em] text-[var(--accent-bright)] uppercase">
+                  <p className="home-chip mb-3 px-3 py-1 text-xs font-bold tracking-[0.18em] uppercase">
                     ASD 大字报
                   </p>
                   {bulletin ? (
@@ -202,11 +202,11 @@ export default async function HomePage() {
             <div className="grid gap-4">
               <Link
                 href={sponsorPost ? `/sponsors/${sponsorPost.id}` : "/sponsors"}
-                className="group block border border-[var(--border-accent)] bg-black/55 p-6 transition hover:border-[var(--accent-bright)]"
+                className="home-feature-card group p-6"
               >
                 <div className="flex items-start justify-between gap-4">
                   <p className="section-label">Sponsor</p>
-                  <span className="shrink-0 text-sm tracking-wide text-[var(--accent-bright)] transition group-hover:text-white">
+                  <span className="home-link shrink-0 text-sm tracking-wide">
                     查看历史 →
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export default async function HomePage() {
                 </div>
               </Link>
 
-              <div className="overflow-hidden border border-[var(--border-accent)] bg-black/55">
+              <div className="home-feature-card overflow-hidden">
                 <div className="relative aspect-[16/9] w-full border-b border-[var(--border)]">
                   <Image
                     src="/live.png"
@@ -244,7 +244,7 @@ export default async function HomePage() {
                     sizes="(min-width: 1024px) 36vw, 100vw"
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/10" />
+                  <div className="home-live-overlay" />
                 </div>
                 <div className="p-6">
                   <div className="flex items-start justify-between gap-4">
@@ -253,7 +253,7 @@ export default async function HomePage() {
                       href={liveHref}
                       target="_blank"
                       rel="noreferrer"
-                      className="shrink-0 text-sm tracking-wide text-[var(--accent-bright)] transition hover:text-white"
+                      className="home-link shrink-0 text-sm tracking-wide"
                     >
                       进入直播 →
                     </a>

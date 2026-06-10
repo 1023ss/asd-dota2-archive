@@ -150,7 +150,7 @@ export default function AdminNewEventPage() {
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-6 py-24">
       <div className="mb-10">
-        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
+        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent-title)]">
           New Event
         </p>
 

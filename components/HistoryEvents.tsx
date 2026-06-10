@@ -58,7 +58,7 @@ function EventCard({ event }: { event: EventResult }) {
           </p>
 
           <div className="mt-5">
-            <p className="text-xs font-semibold tracking-[0.15em] text-[var(--accent)] uppercase">
+            <p className="text-xs font-semibold tracking-[0.15em] text-[var(--accent-title)] uppercase">
               冠军成员
             </p>
             <EventMemberList members={event.champions ?? []} />
@@ -66,7 +66,7 @@ function EventCard({ event }: { event: EventResult }) {
 
           {event.sponsors?.length > 0 && (
             <div className="mt-5">
-              <p className="text-xs font-semibold tracking-[0.15em] text-[var(--accent)] uppercase">
+              <p className="text-xs font-semibold tracking-[0.15em] text-[var(--accent-title)] uppercase">
                 赞助者
               </p>
               <EventMemberList members={event.sponsors} />

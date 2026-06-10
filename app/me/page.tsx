@@ -211,7 +211,7 @@ export default function MePage() {
       <div className="border border-white/10 bg-black/40 p-6 shadow-2xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
+            <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent-title)]">
           Member Center
         </p>
 
@@ -332,7 +332,7 @@ export default function MePage() {
           >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent-title)]">
                   Team Portal
                 </p>
                 <p className="mt-2 text-base font-bold text-white">
@@ -347,7 +347,7 @@ export default function MePage() {
           </Link>
          </div>{isAdminRole(player?.role) && (
         <div className="mt-4 border border-white/10 bg-black/40 p-5">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent)]">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-[var(--accent-title)]">
             Admin Tools
             </p>
 
@@ -370,6 +370,12 @@ export default function MePage() {
                 className="border border-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
             >
                 邀请码管理
+            </Link>
+            <Link
+                href="/admin/power"
+                className="border border-[var(--accent)] px-5 py-3 text-center text-sm font-bold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white"
+            >
+                战力管理
             </Link>
             <Link
                 href="/admin/bulletins"

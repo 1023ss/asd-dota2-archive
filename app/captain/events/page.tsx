@@ -105,7 +105,7 @@ export default function CaptainEventsPage() {
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-6 py-24">
       <div className="mb-10">
-        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)]">
+        <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent-title)]">
           Captain Center
         </p>
 
@@ -140,7 +140,7 @@ export default function CaptainEventsPage() {
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.2em] text-[var(--accent)]">
+                    <p className="text-sm uppercase tracking-[0.2em] text-[var(--accent-title)]">
                       {event?.event_type || "weekly"}
                     </p>
 

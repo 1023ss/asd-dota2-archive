@@ -72,7 +72,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
       <KuroPanel className="p-6 sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
-            <p className="font-mono text-xs tracking-[0.2em] text-[var(--accent)]">
+            <p className="font-mono text-xs tracking-[0.2em] text-[var(--accent-title)]">
               {player.uid}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
